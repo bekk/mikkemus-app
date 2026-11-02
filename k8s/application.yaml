@@ -4,15 +4,15 @@
 apiVersion: skiperator.kartverket.no/v1alpha1
 kind: Application
 metadata:
-  name: mikkemus-web
+  name: mikkemus-weba
   namespace: mikkemus
 spec:
-  image: "ghcr.io/madshermansen/mikkemus-web:latest"
+  image: "ghcr.io/ahmedabdulahi/mikkemus-webatest:latest"
   port: 8080
-  replicas: 1
+  replicas: 2
 
   ingresses:
-    - mikkemusss.51-158-58-170.nip.io # bytt til et ekte hostnavn når dere har et
+    - mikkemusa
 
   liveness:
     path: /
@@ -24,68 +24,7 @@ spec:
 
   envFrom:
     - secret: mikkemus-db
-
-  # Blob storage: plattformen lager secreten mikkemus-blob når teamets fil i
-  # eurocloud-repoet har `blob: true`, men bare på Scaleway og bare i miljøer
-  # der det er rullet ut. Med envFrom starter ikke podden der secreten mangler,
-  # så nøklene hentes én og én med optional: true. Mangler secreten, viser
-  # /status bare blob storage som ikke satt opp.
-  env:
-    - name: AWS_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          name: mikkemus-blob
-          key: AWS_ACCESS_KEY_ID
-          optional: true
-    - name: AWS_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: mikkemus-blob
-          key: AWS_SECRET_ACCESS_KEY
-          optional: true
-    - name: AWS_REGION
-      valueFrom:
-        secretKeyRef:
-          name: mikkemus-blob
-          key: AWS_REGION
-          optional: true
-    - name: AWS_ENDPOINT_URL_S3
-      valueFrom:
-        secretKeyRef:
-          name: mikkemus-blob
-          key: AWS_ENDPOINT_URL_S3
-          optional: true
-    - name: S3_BUCKET
-      valueFrom:
-        secretKeyRef:
-          name: mikkemus-blob
-          key: S3_BUCKET
-          optional: true
-    # Block storage: BLOCK_STORAGE_PATH må peke på samme sti som mountPath under.
-    # - name: BLOCK_STORAGE_PATH
-    #   value: /data
-
-  # Block storage: et PersistentVolumeClaim montert inn som en mappe.
-  # filesFrom:
-  #   - mountPath: /data
-  #     persistentVolumeClaim: mikkemus-data
-
-  # Uten denne blokkerer skiperator sin NetworkPolicy/AuthorizationPolicy all
-  # utgående trafikk til ting som ikke er en annen skiperator-Application.
-  # Databasen er en ekstern Scaleway-tjeneste (nås via privat VPC-IP), så den
-  # må whitelistes eksplisitt her. IP-en er samme som i mikkemus-db-secreten
-  # (terraform output -raw mikkemus_db_connection_string i eurocloud-repoet).
-  accessPolicy:
-    outbound:
-      external:
-        - host: "172.16.0.3"
-          ip: "172.16.0.3"
-          ports:
-            - name: postgres
-              protocol: TCP
-              port: 5432
-        # Blob storage trenger ingen regel her: plattformen åpner veien til
-        # bøtta selv (en ServiceEntry i namespacet) når den lager secreten.
+    - secret: mikkemus-blob
 
   resources:
     requests:

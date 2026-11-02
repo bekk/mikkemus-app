@@ -1,3 +1,4 @@
+
 # Engangsjobb som synkroniserer Prisma-schemaet (`prisma db push`) mot
 # databasen. Kjøres fra inni klyngen siden databasen kun er nåbar privat.
 #
@@ -17,21 +18,6 @@ spec:
 
   image: "ghcr.io/ahmedabdulahi/mikkemus-web:migrate"
 
-  env:
-    - name: DATABASE_URL
-      valueFrom:
-        secretKeyRef:
-          name: mikkemus-db
-          key: DATABASE_URL
-
-  # Samme regel som i application.yaml – uten denne blokkeres jobben fra å
-  # nå databasen i det hele tatt.
-  accessPolicy:
-    outbound:
-      external:
-        - host: "172.16.0.3"
-          ip: "172.16.0.3"
-          ports:
-            - name: postgres
-              protocol: TCP
-              port: 5432
+  # Databasetilgangen gis av plattformen, som for mikkemus.yaml.
+  envFrom:
+    - secret: mikkemus-db
