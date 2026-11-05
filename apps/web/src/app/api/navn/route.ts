@@ -5,8 +5,13 @@ import { hentSide, lesSidetall, PER_SIDE } from "@/lib/navn";
 // Én side om gangen, f.eks. /api/navn?side=2. Å returnere alle radene på én
 // gang får serveren til å gå tom for minne når tabellen er stor.
 export async function GET(request: NextRequest) {
-  const side = await hentSide(lesSidetall(request.nextUrl.searchParams.get("side")));
-  return NextResponse.json({ ...side, perSide: PER_SIDE });
+  try {
+    const side = await hentSide(lesSidetall(request.nextUrl.searchParams.get("side")));
+    return NextResponse.json({ ...side, perSide: PER_SIDE });
+  } catch (err) {
+    console.error("Klarte ikke å hente navn", err);
+    return databasefeil();
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -27,6 +32,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const opprettet = await prisma.navn.create({ data: { navn } });
-  return NextResponse.json(opprettet, { status: 201 });
+  try {
+    const opprettet = await prisma.navn.create({ data: { navn } });
+    return NextResponse.json(opprettet, { status: 201 });
+  } catch (err) {
+    console.error("Klarte ikke å lagre navn", err);
+    return databasefeil();
+  }
+}
+
+function databasefeil() {
+  return NextResponse.json(
+    { error: "Databasen svarer ikke akkurat nå. Se /status for detaljer." },
+    { status: 503 },
+  );
 }

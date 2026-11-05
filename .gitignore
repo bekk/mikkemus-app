@@ -2,8 +2,11 @@ node_modules/
 .next/
 dist/
 build/
+packages/database/.env
 .env
 .env.local
 *.log
 .DS_Store
 packages/database/generated/
+
+.idea

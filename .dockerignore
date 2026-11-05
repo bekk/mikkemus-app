@@ -3,6 +3,6 @@ node_modules
 .next
 **/.next
 .git
-.env
+packages/database/.env
 .env.local
 packages/database/generated
