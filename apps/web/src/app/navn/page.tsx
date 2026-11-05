@@ -1,5 +1,5 @@
-import { ENHETSNAVN, hentSide, hentTidsserie, lesSidetall, PER_SIDE, TIDSSONE } from "@/lib/navn";
-import { SlettNavn } from "./SlettNavn";
+import { ENHETSNAVN, hentSide, hentTidsserie, lesSidetall, PER_SIDE } from "@/lib/navn";
+import { Navneliste } from "./Navneliste";
 import { Tidsgraf } from "./Tidsgraf";
 
 // Alltid hent ferske data fra databasen, ikke cache siden statisk.
@@ -11,10 +11,34 @@ export default async function NavnPage({
   searchParams: Promise<{ side?: string | string[] }>;
 }) {
   const ønsketSide = lesSidetall((await searchParams).side);
-  const [{ navn: alleNavn, side, antallSider, totalt }, tidsserie] = await Promise.all([
+  // Databasefeil skal ikke ta ned siden, men vises som en melding.
+  const [sideResultat, tidsserieResultat] = await Promise.allSettled([
     hentSide(ønsketSide),
     hentTidsserie(),
   ]);
+  if (tidsserieResultat.status === "rejected") {
+    console.error("Klarte ikke å hente tidsserie", tidsserieResultat.reason);
+  }
+  if (sideResultat.status === "rejected") {
+    console.error("Klarte ikke å hente navn", sideResultat.reason);
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
+        <h2 className="text-2xl font-semibold mb-2">Alle som har vært innom</h2>
+        <p className="text-mikke-red" role="alert">
+          Klarte ikke å hente navnene fra databasen. Se{" "}
+          <a href="/status" className="underline">
+            plattformstatus
+          </a>{" "}
+          for detaljer.
+        </p>
+        <a href="/" className="inline-block mt-6 text-mikke-red font-medium hover:underline">
+          ← Til forsiden
+        </a>
+      </div>
+    );
+  }
+  const { navn: alleNavn, side, antallSider, totalt } = sideResultat.value;
+  const tidsserie = tidsserieResultat.status === "fulfilled" ? tidsserieResultat.value : null;
   const fra = (side - 1) * PER_SIDE + 1;
 
   return (
@@ -36,22 +60,7 @@ export default async function NavnPage({
         </p>
       )}
 
-      <ul className="flex flex-col gap-2">
-        {alleNavn.map((n) => (
-          <li
-            key={n.id}
-            className="flex items-center justify-between gap-4 border-b border-mikke-black/10 py-2"
-          >
-            <span className="font-medium break-all">{n.navn}</span>
-            <span className="flex items-center gap-4 shrink-0">
-              <span className="text-sm text-mikke-black/50">
-                {new Date(n.opprettet).toLocaleString("no-NO", { timeZone: TIDSSONE })}
-              </span>
-              <SlettNavn id={n.id} navn={n.navn} />
-            </span>
-          </li>
-        ))}
-      </ul>
+      <Navneliste navn={alleNavn} />
 
       {antallSider > 1 && <Sidevelger side={side} antallSider={antallSider} />}
 
@@ -59,7 +68,7 @@ export default async function NavnPage({
         href="/"
         className="inline-block mt-6 text-mikke-red font-medium hover:underline"
       >
-        ← Registrer et nytt navn
+        ← Til forsiden
       </a>
     </div>
   );
