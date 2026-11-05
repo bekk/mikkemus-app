@@ -37,57 +37,61 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className={kort}>
-        <h2 className="text-2xl font-semibold mb-2">Velkommen! 🎩</h2>
-        <p className="text-mikke-black/70 mb-6">
-          Skriv inn navnet ditt under, så dukker det opp på listen over alle
-          som har vært innom.
-        </p>
-        <RegistrerNavn />
-      </section>
-
-      <section className={kort}>
-        <h2 className="text-2xl font-semibold mb-2">Hvem har vært innom</h2>
-        {!side ? (
-          <Feil>Klarte ikke å hente navnene fra databasen.</Feil>
-        ) : side.totalt === 0 ? (
-          <p className="text-mikke-black/50">Ingen har registrert seg ennå.</p>
-        ) : (
-          <>
-            <p className="text-mikke-black/70 mb-4">
-              {`${side.totalt.toLocaleString("no-NO")} ${side.totalt === 1 ? "person har" : "personer har"} registrert seg. Nyeste først:`}
-            </p>
-            <Navneliste navn={side.navn} />
-            <a href="/navn" className="inline-block mt-6 text-mikke-red font-medium hover:underline">
-              {side.antallSider > 1 ? "Se alle navn og grafen →" : "Se grafen →"}
-            </a>
-          </>
-        )}
-      </section>
-
-      <section className={kort}>
-        <h2 className="text-2xl font-semibold mb-2">Bilder 📷</h2>
-        {!konfig ? (
-          <p className="text-mikke-black/70">
-            Bildeopplasting er ikke satt opp i dette miljøet. Den trenger blob
-            storage fra plattformen.
-          </p>
-        ) : (
-          <>
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="flex flex-col gap-6">
+          <section className={kort}>
+            <h2 className="text-2xl font-semibold mb-2">Velkommen! 🎩</h2>
             <p className="text-mikke-black/70 mb-6">
-              Last opp et bilde, så havner det i bøtta og dukker opp under.
+              Skriv inn navnet ditt under, så dukker det opp på listen over alle
+              som har vært innom.
             </p>
-            <LastOppBilde maksMB={MAKS_BYTES / 1024 / 1024} />
-            {bilder ? (
-              <Bildegalleri bilder={bilder} />
+            <RegistrerNavn />
+          </section>
+
+          <section className={kort}>
+            <h2 className="text-2xl font-semibold mb-2">Bilder 📷</h2>
+            {!konfig ? (
+              <p className="text-mikke-black/70">
+                Bildeopplasting er ikke satt opp i dette miljøet. Den trenger blob
+                storage fra plattformen.
+              </p>
             ) : (
-              <div className="mt-6">
-                <Feil>Klarte ikke å hente bildene fra blob storage.</Feil>
-              </div>
+              <>
+                <p className="text-mikke-black/70 mb-6">
+                  Last opp et bilde, så havner det i bøtta og dukker opp under.
+                </p>
+                <LastOppBilde maksMB={MAKS_BYTES / 1024 / 1024} />
+                {bilder ? (
+                  <Bildegalleri bilder={bilder} />
+                ) : (
+                  <div className="mt-6">
+                    <Feil>Klarte ikke å hente bildene fra blob storage.</Feil>
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
-      </section>
+          </section>
+        </div>
+
+        <section className={kort}>
+          <h2 className="text-2xl font-semibold mb-2">Hvem har vært innom</h2>
+          {!side ? (
+            <Feil>Klarte ikke å hente navnene fra databasen.</Feil>
+          ) : side.totalt === 0 ? (
+            <p className="text-mikke-black/50">Ingen har registrert seg ennå.</p>
+          ) : (
+            <>
+              <p className="text-mikke-black/70 mb-4">
+                {`${side.totalt.toLocaleString("no-NO")} ${side.totalt === 1 ? "person har" : "personer har"} registrert seg. Nyeste først:`}
+              </p>
+              <Navneliste navn={side.navn} />
+              <a href="/navn" className="inline-block mt-6 text-mikke-red font-medium hover:underline">
+                {side.antallSider > 1 ? "Se alle navn og grafen →" : "Se grafen →"}
+              </a>
+            </>
+          )}
+        </section>
+      </div>
 
       <a href="/status" className="text-mikke-red font-medium hover:underline">
         Plattformstatus →

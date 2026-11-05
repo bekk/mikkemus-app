@@ -22,7 +22,7 @@ export default async function NavnPage({
   if (sideResultat.status === "rejected") {
     console.error("Klarte ikke å hente navn", sideResultat.reason);
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
         <h2 className="text-2xl font-semibold mb-2">Alle som har vært innom</h2>
         <p className="text-mikke-red" role="alert">
           Klarte ikke å hente navnene fra databasen. Se{" "}
@@ -42,7 +42,7 @@ export default async function NavnPage({
   const fra = (side - 1) * PER_SIDE + 1;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
+    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
       <h2 className="text-2xl font-semibold mb-2">Alle som har vært innom</h2>
       <p className="text-mikke-black/70 mb-6">
         {totalt === 0

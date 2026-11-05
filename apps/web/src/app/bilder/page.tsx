@@ -21,7 +21,7 @@ export default async function BilderPage() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
+    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
       <h2 className="text-2xl font-semibold mb-2">Bilder 📷</h2>
 
       {!konfig ? (

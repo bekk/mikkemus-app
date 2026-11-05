@@ -22,7 +22,7 @@ export default async function StatusPage() {
   const sjekker = await sjekkPlattform();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
+    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-8 border border-mikke-black/10">
       <h2 className="text-2xl font-semibold mb-2">Plattformstatus</h2>
       <p className="text-mikke-black/70 mb-6">
         Tester ressursene plattformen har gitt appen. Det som ikke fungerer

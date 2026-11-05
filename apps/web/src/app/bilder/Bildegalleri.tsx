@@ -5,7 +5,7 @@ export function Bildegalleri({ bilder }: { bilder: BildeDto[] }) {
     return <p className="text-mikke-black/50 mt-6">Ingen bilder ennå. Bli den første!</p>;
   }
   return (
-    <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
+    <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-6">
       {bilder.map((bilde) => (
         <li key={bilde.navn}>
           <a href={`/api/bilder/${bilde.navn}`}>
