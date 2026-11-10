@@ -25,6 +25,7 @@ spec:
   envFrom:
     - secret: mikkemus-db
     - secret: mikkemus-blob
+    - secret: mikkemus-secrets
 
   resources:
     requests:

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -39,6 +39,7 @@ const SJEKKER: [tjeneste: string, sjekk: (tjeneste: string) => Promise<Sjekk>][]
   ["Database (PostgreSQL)", sjekkDatabase],
   ["Blob storage (S3)", sjekkBlobStorage],
   ["Block storage (volum)", sjekkBlockStorage],
+  ["Hemmelighet (OpenBao)", sjekkHemmelighet],
 ];
 
 export function sjekkPlattform(): Promise<Sjekk[]> {
@@ -172,6 +173,33 @@ async function sjekkBlockStorage(tjeneste: string): Promise<Sjekk> {
     }],
     ["Slett testfil", async () => {
       await fs.unlink(fil);
+    }],
+  ]);
+}
+
+// Hemmeligheter teamet legger i OpenBao under teams/mikkemus/env synkroniseres
+// av plattformen til Secret-en mikkemus-secrets, som appen får som
+// miljøvariabler (se k8s/application.yaml). Verdien vises aldri – bare et
+// fingeravtrykk, så du kan sjekke at det er riktig verdi som har kommet fram:
+//   printf %s '<verdien>' | shasum -a 256
+const HEMMELIGHET = "MIKKEMUS_HEMMELIGHET";
+
+async function sjekkHemmelighet(tjeneste: string): Promise<Sjekk> {
+  const verdi = process.env[HEMMELIGHET];
+  if (!verdi) {
+    return utenSteg(
+      tjeneste,
+      "ikke-konfigurert",
+      `${HEMMELIGHET} er ikke satt. Legg den inn i OpenBao med ` +
+        `\`bao kv patch -mount=teams mikkemus/env ${HEMMELIGHET}=...\` ` +
+        "og start podene på nytt.",
+    );
+  }
+
+  return kjørSteg(tjeneste, [`Variabel: ${HEMMELIGHET}`], [
+    ["Bruk hemmeligheten", async () => {
+      const fingeravtrykk = createHash("sha256").update(verdi).digest("hex");
+      return `${verdi.length} tegn, SHA-256 starter med ${fingeravtrykk.slice(0, 12)}`;
     }],
   ]);
 }
