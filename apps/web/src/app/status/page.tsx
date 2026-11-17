@@ -18,6 +18,29 @@ const stegIkoner: Record<Steg["status"], { ikon: string; klasse: string }> = {
   "hoppet-over": { ikon: "–", klasse: "text-mikke-black/40" },
 };
 
+// Bakt inn under bygging, se next.config.ts.
+const byggetid = process.env.BYGGETIDSPUNKT;
+
+function formaterByggetid(iso: string | undefined): string {
+  if (!iso) return "ukjent";
+  const tid = new Date(iso);
+  const formatert = tid.toLocaleString("nb-NO", {
+    timeZone: "Europe/Oslo",
+    dateStyle: "long",
+    timeStyle: "short",
+  });
+  return `${formatert} (${siden(tid)})`;
+}
+
+function siden(tid: Date): string {
+  const minutter = Math.round((Date.now() - tid.getTime()) / 60_000);
+  if (minutter < 1) return "akkurat nå";
+  if (minutter < 60) return `${minutter} min siden`;
+  const timer = Math.round(minutter / 60);
+  if (timer < 48) return `${timer} t siden`;
+  return `${Math.round(timer / 24)} dager siden`;
+}
+
 export default async function StatusPage() {
   const sjekker = await sjekkPlattform();
 
@@ -28,6 +51,11 @@ export default async function StatusPage() {
         Tester ressursene plattformen har gitt appen. Det som ikke fungerer
         vises her i stedet for å stoppe appen.
       </p>
+
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm mb-6 bg-mikke-black/5 rounded-lg p-4">
+        <dt className="text-mikke-black/50">Sist bygget</dt>
+        <dd className="break-words">{formaterByggetid(byggetid)}</dd>
+      </dl>
 
       <div className="flex flex-col gap-6">
         {sjekker.map((sjekk) => (

@@ -1,6 +1,4 @@
 import { createHash, randomUUID } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -11,7 +9,7 @@ import { prisma } from "@mikkemus/database";
 import { finnRegion, lagS3Klient } from "@/lib/blob";
 
 // Sjekker om ressursene plattformen skal gi appen (database, blob storage og
-// block storage) faktisk er satt opp og fungerer. Ingen av sjekkene kaster –
+// hemmeligheter) faktisk er satt opp og fungerer. Ingen av sjekkene kaster –
 // alt som går galt blir til en feilmelding på /status i stedet.
 
 // Uten tidsfrist kan en tilkobling som blokkeres av en NetworkPolicy (der
@@ -38,7 +36,6 @@ type StegDefinisjon = [navn: string, kjør: () => Promise<string | void>];
 const SJEKKER: [tjeneste: string, sjekk: (tjeneste: string) => Promise<Sjekk>][] = [
   ["Database (PostgreSQL)", sjekkDatabase],
   ["Blob storage (S3)", sjekkBlobStorage],
-  ["Block storage (volum)", sjekkBlockStorage],
   ["Hemmelighet (OpenBao)", sjekkHemmelighet],
 ];
 
@@ -139,40 +136,6 @@ async function sjekkBlobStorage(tjeneste: string): Promise<Sjekk> {
     }],
     ["Slett testfil", async () => {
       await s3.send(new DeleteObjectCommand({ Bucket: bøtte, Key: nøkkel }));
-    }],
-  ]);
-}
-
-// Block storage kommer ikke som en URL, men som et volum (PersistentVolumeClaim)
-// montert inn i containeren. BLOCK_STORAGE_PATH peker på monteringspunktet.
-async function sjekkBlockStorage(tjeneste: string): Promise<Sjekk> {
-  const mappe = process.env.BLOCK_STORAGE_PATH;
-  if (!mappe) {
-    return utenSteg(tjeneste, "ikke-konfigurert", "BLOCK_STORAGE_PATH er ikke satt.");
-  }
-
-  const fil = path.join(mappe, `.plattformsjekk-${randomUUID()}.txt`);
-  const innhold = lagTestinnhold();
-
-  return kjørSteg(tjeneste, [`Monteringspunkt: ${mappe}`], [
-    ["Finn mappa", async () => {
-      if (!(await fs.stat(mappe)).isDirectory()) {
-        throw new Error(`${mappe} er ikke en mappe.`);
-      }
-      const { blocks, bavail, bsize } = await fs.statfs(mappe);
-      return `${formaterGiB(bavail * bsize)} ledig av ${formaterGiB(blocks * bsize)}`;
-    }],
-    ["Skriv testfil", async () => {
-      await fs.writeFile(fil, innhold);
-      return fil;
-    }],
-    ["Les testfil", async () => {
-      if ((await fs.readFile(fil, "utf8")) !== innhold) {
-        throw new Error("Innholdet som ble lest er ikke det samme som ble skrevet.");
-      }
-    }],
-    ["Slett testfil", async () => {
-      await fs.unlink(fil);
     }],
   ]);
 }
@@ -291,8 +254,4 @@ function masker(verdi: string): string {
 
 function lagTestinnhold(): string {
   return `Plattformsjekk fra mikkemus-app ${new Date().toISOString()}`;
-}
-
-function formaterGiB(bytes: number): string {
-  return `${(bytes / 1024 ** 3).toFixed(1)} GiB`;
 }
