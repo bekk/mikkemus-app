@@ -41,6 +41,27 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Sletter alle registreringene av et navn, f.eks. DELETE /api/navn?navn=Mikke.
+// Lista viser like navn som én rad, så det er det slett-knappen der bruker.
+export async function DELETE(request: NextRequest) {
+  const navn = request.nextUrl.searchParams.get("navn");
+  if (!navn) {
+    return NextResponse.json({ error: "Mangler ?navn=" }, { status: 400 });
+  }
+
+  let count: number;
+  try {
+    ({ count } = await prisma.navn.deleteMany({ where: { navn } }));
+  } catch (err) {
+    console.error("Klarte ikke å slette navn", err);
+    return databasefeil();
+  }
+  if (count === 0) {
+    return NextResponse.json({ error: "Fant ikke navnet" }, { status: 404 });
+  }
+  return new NextResponse(null, { status: 204 });
+}
+
 function databasefeil() {
   return NextResponse.json(
     { error: "Databasen svarer ikke akkurat nå. Se /status for detaljer." },

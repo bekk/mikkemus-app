@@ -1,32 +1,48 @@
-import { prisma, type Navn } from "@mikkemus/database";
+import { prisma } from "@mikkemus/database";
 
 // Tabellen kan bli stor nok til at det ikke går å hente alle radene på én gang
 // (Node går tom for minne). Alt som leser navn går derfor via funksjonene her,
 // som bare henter én side av gangen eller lar databasen telle.
 
-export const PER_SIDE = 50;
+// Like navn slås sammen til én rad med tidspunktet for siste registrering, og
+// lista viser maks så mange rader om gangen.
+export const PER_SIDE = 10;
 
 // Tidene vises i norsk tid, både i lista og i grafen, uansett hvilken
 // tidssone serveren kjører i.
 export const TIDSSONE = "Europe/Oslo";
 
+export type SammenslåttNavn = {
+  navn: string;
+  // Siste gang navnet ble registrert.
+  sist: Date;
+  // Hvor mange ganger navnet er registrert totalt.
+  antall: number;
+};
+
 export type NavnSide = {
-  navn: Navn[];
+  navn: SammenslåttNavn[];
   side: number;
   antallSider: number;
+  // Antall ulike navn, ikke antall registreringer.
   totalt: number;
 };
 
 export async function hentSide(ønsketSide: number): Promise<NavnSide> {
-  const totalt = await prisma.navn.count();
+  const [{ totalt }] = await prisma.$queryRaw<{ totalt: number }[]>`
+    SELECT count(DISTINCT navn)::int AS totalt FROM navn
+  `;
   const antallSider = Math.max(1, Math.ceil(totalt / PER_SIDE));
   // En side bak slutten (f.eks. etter at noen har slettet) gir siste side.
   const side = Math.min(Math.max(1, ønsketSide), antallSider);
-  const navn = await prisma.navn.findMany({
-    orderBy: [{ opprettet: "desc" }, { id: "desc" }],
-    skip: (side - 1) * PER_SIDE,
-    take: PER_SIDE,
-  });
+  // Grupperingen gjøres i databasen, så bare én side med rader hentes til Node.
+  const navn = await prisma.$queryRaw<SammenslåttNavn[]>`
+    SELECT navn, max(opprettet) AS sist, count(*)::int AS antall
+    FROM navn
+    GROUP BY navn
+    ORDER BY sist DESC, navn
+    LIMIT ${PER_SIDE} OFFSET ${(side - 1) * PER_SIDE}
+  `;
   return { navn, side, antallSider, totalt };
 }
 
